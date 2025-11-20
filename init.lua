@@ -151,6 +151,9 @@ vim.o.splitbelow = true
 --   and `:help lua-options-guide`
 vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
+vim.o.tabstop = 4 -- Number of visual spaces per TAB
+vim.o.shiftwidth = 4 -- Size of indent
+vim.o.softtabstop = 4 -- Number of spaces when pressing TAB
 
 -- Preview substitutions live, as you type!
 vim.o.inccommand = 'split'
@@ -407,12 +410,45 @@ require('lazy').setup({
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
         --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
-        -- pickers = {}
+        defaults = {
+          vimgrep_arguments = {
+            'rg',
+            '--follow', -- Follow symbolic links
+            '--hidden', -- Search for hidden files
+            '--no-heading', -- Don't group matches by each file
+            '--no-ignore',
+            '--with-filename', -- Print the file path with the matched lines
+            '--line-number', -- Show line numbers
+            '--column', -- Show column numbers
+            '--smart-case', -- Smart case search
+            -- Exclude some patterns from search
+            '--glob=!**/.git/*',
+            '--glob=!**/.idea/*',
+            '--glob=!**/.vscode/*',
+            '--glob=!**/build/*',
+            '--glob=!**/dist/*',
+            '--glob=!**/yarn.lock',
+            '--glob=!**/package-lock.json',
+            '--glob=!**/composer-lock.json',
+          },
+        },
+        pickers = {
+          find_files = {
+            hidden = true,
+            find_command = {
+              'rg',
+              '--files',
+              '--hidden',
+              '--glob=!**/.git/*',
+              '--glob=!**/.idea/*',
+              '--glob=!**/.vscode/*',
+              '--glob=!**/build/*',
+              '--glob=!**/dist/*',
+              '--glob=!**/yarn.lock',
+              '--glob=!**/package-lock.json',
+            },
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -836,6 +872,7 @@ require('lazy').setup({
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
         preset = 'default',
+        vim.keymap.set('n', '<leader>W', ':noa w<CR>', {}),
 
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
