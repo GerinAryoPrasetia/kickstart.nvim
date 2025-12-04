@@ -39,7 +39,7 @@ return {
             key = 'e',
             key_hl = 'Number',
             key_format = ' [%s]',
-            action = 'Oil', -- or Yazi / NvimTreeToggle
+            action = 'Yazi', -- or Yazi / NvimTreeToggle
           },
           {
             icon = ' ',
