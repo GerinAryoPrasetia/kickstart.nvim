@@ -29,6 +29,22 @@ local function open_float_window()
     row = row,
   })
 
+  -- Keymap: ESC = exit terminal mode (normal neovim)
+  -- Then ESC again = close floating window
+  -- vim.keymap.set('t', '<Esc>', function()
+  --   -- If terminal mode → leave terminal mode
+  --   if vim.fn.mode() == 't' then
+  --     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<C-\\><C-n>', true, false, true), 'n', false)
+  --     return
+  --   end
+  --
+  --   -- If not terminal mode → close window
+  --   if term_win and vim.api.nvim_win_is_valid(term_win) then
+  --     vim.api.nvim_win_close(term_win, true)
+  --     term_win = nil
+  --   end
+  -- end, { buffer = term_buf })
+
   vim.cmd 'startinsert'
 end
 
