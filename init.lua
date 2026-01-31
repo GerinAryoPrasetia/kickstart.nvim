@@ -933,32 +933,32 @@ require('lazy').setup({
     -- -- change the command in the config to whatever the name of that colorscheme is.
     -- --
     -- -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    -- 'folke/tokyonight.nvim',
-    -- priority = 1000, -- Make sure to load this before all the other start plugins.
-    -- config = function()
-    --   ---@diagnostic disable-next-line: missing-fields
-    --   require('tokyonight').setup {
-    --     styles = {
-    --       comments = { italic = true }, -- Disable italics in comments
-    --     },
-    --   }
-    --
-    --   -- Load the cOLORSCHEME here.
-    --   -- Like many other themes, this one has different styles, and you could load
-    --   -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-    --   vim.cmd.colorscheme 'tokyonight-moon'
-    -- end,
-    'rebelot/kanagawa.nvim',
-    priority = 1000,
+    'folke/tokyonight.nvim',
+    priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
-      require('kanagawa').setup {
-        compile = false,
-        dimInactive = true,
-        commentStyle = { italic = false },
-        theme = 'dragon', -- wave | dragon | lotus
+      ---@diagnostic disable-next-line: missing-fields
+      require('tokyonight').setup {
+        styles = {
+          comments = { italic = true }, -- Disable italics in comments
+        },
       }
-
-      vim.cmd 'colorscheme kanagawa'
+      --
+      --   -- Load the cOLORSCHEME here.
+      --   -- Like many other themes, this one has different styles, and you could load
+      --   -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
+      vim.cmd.colorscheme 'tokyonight-moon'
+      -- end,
+      -- 'rebelot/kanagawa.nvim',
+      -- priority = 1000,
+      -- config = function()
+      --   require('kanagawa').setup {
+      --     compile = false,
+      --     dimInactive = true,
+      --     commentStyle = { italic = false },
+      --     theme = 'dragon', -- wave | dragon | lotus
+      --   }
+      --
+      --   vim.cmd 'colorscheme kanagawa'
     end,
   },
   -- {
@@ -1086,7 +1086,6 @@ require('lazy').setup({
   require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
-
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
   --
