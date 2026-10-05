@@ -211,6 +211,27 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
+-- nvim-treesitter (main branch) has no highlight/indent module of its own:
+-- start treesitter highlighting manually per filetype, and opt in to its
+-- experimental treesitter-based indentation (mirrors the old
+-- indent.enable/disable={'ruby'} option: ruby keeps its own ftplugin indent).
+vim.api.nvim_create_autocmd('FileType', {
+  callback = function(args)
+    local started = pcall(vim.treesitter.start, args.buf)
+    if started and vim.bo[args.buf].filetype ~= 'ruby' then
+      vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+    end
+  end,
+})
+
+-- Neovim 0.12: patch uri_to_fname to not crash on unknown URI schemes (e.g. intelephense://)
+local _orig_uri_to_fname = vim.uri_to_fname
+vim.uri_to_fname = function(uri)
+  local ok, result = pcall(_orig_uri_to_fname, uri)
+  if ok then return result end
+  return uri
+end
+
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
 --  See `:help vim.hl.on_yank()`
@@ -732,7 +753,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
+        ts_ls = {},
         --
 
         lua_ls = {
@@ -749,6 +770,7 @@ require('lazy').setup({
             },
           },
         },
+        intelephense = {},
       }
 
       -- Ensure the servers and tools above are installed
@@ -766,13 +788,24 @@ require('lazy').setup({
       -- for you, so that they are available from within Neovim.
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
+        'stylua',
+        'prettierd',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
         automatic_installation = false,
+        -- This mason-lspconfig version auto-enables (via vim.lsp.enable) EVERY
+        -- mason-installed server -- the `handlers` table below is dead in this
+        -- version (it no longer reads that option at all). A stray/leftover
+        -- install (laravel-ls, from unrelated experimenting -- already removed)
+        -- auto-attached to every .php buffer with zero config (no root_dir
+        -- handling, since this isn't a Laravel project), which is what caused
+        -- the "unknown scheme" initialize crash on every .php file open.
+        -- Exclude it by name so it can't happen again even if reinstalled,
+        -- while everything else still auto-enables as before.
+        automatic_enable = { exclude = { 'laravel_ls' } },
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
@@ -819,11 +852,10 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        typescript = { 'prettierd', 'prettier', stop_after_first = true },
+        typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -936,16 +968,6 @@ require('lazy').setup({
     'folke/tokyonight.nvim',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
-        styles = {
-          comments = { italic = true }, -- Disable italics in comments
-        },
-      }
-      --
-      --   -- Load the cOLORSCHEME here.
-      --   -- Like many other themes, this one has different styles, and you could load
-      --   -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
       vim.cmd.colorscheme 'tokyonight-moon'
       -- end,
       -- 'rebelot/kanagawa.nvim',
@@ -1048,22 +1070,33 @@ require('lazy').setup({
   },
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
+    branch = 'main',
+    lazy = false, -- this plugin does not support lazy-loading
     build = ':TSUpdate',
-    branch = 'master',
-    -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-    opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
-      -- Autoinstall languages that are not installed
-      auto_install = true,
-      highlight = {
-        enable = true,
-        -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-        --  If you are experiencing weird indenting issues, add the language to
-        --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-        additional_vim_regex_highlighting = { 'ruby' },
-      },
-      indent = { enable = true, disable = { 'ruby' } },
-    },
+    -- [[ Configure Treesitter ]] See https://github.com/nvim-treesitter/nvim-treesitter/blob/main/README.md
+    config = function()
+      require('nvim-treesitter').setup()
+      require('nvim-treesitter').install {
+        'go',
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'php',
+        'javascript',
+        'typescript',
+        'tsx',
+      }
+      -- Use the richer tsx parser for .jsx files too (javascriptreact filetype)
+      vim.treesitter.language.register('tsx', 'javascriptreact')
+    end,
     -- There are additional nvim-treesitter modules that you can use to interact
     -- with nvim-treesitter. You should go explore a few and see what interests you:
     --
@@ -1082,7 +1115,7 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',

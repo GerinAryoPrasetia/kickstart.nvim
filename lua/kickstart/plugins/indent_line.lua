@@ -4,6 +4,9 @@ return {
     -- Enable `lukas-reineke/indent-blankline.nvim`
     -- See `:help ibl`
     main = 'ibl',
-    opts = {},
+    opts = {
+      scope = { enabled = true, show_start = false, show_end = false },
+      exclude = { filetypes = { 'dashboard' } },
+    },
   },
 }
