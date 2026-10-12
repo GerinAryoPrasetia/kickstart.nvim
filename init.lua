@@ -743,7 +743,9 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
+        clangd = {
+          cmd = { 'clangd', '--background-index', '--clang-tidy', '--header-insertion=never', '--completion-style=detailed' },
+        },
         gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
@@ -790,6 +792,7 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, {
         'stylua',
         'prettierd',
+        'clang-format',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -806,17 +809,15 @@ require('lazy').setup({
         -- Exclude it by name so it can't happen again even if reinstalled,
         -- while everything else still auto-enables as before.
         automatic_enable = { exclude = { 'laravel_ls' } },
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for ts_ls)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
-        },
       }
+
+      -- Nvim 0.11+ native config: apply the `servers` table above (blink.cmp
+      -- capabilities + per-server overrides) via vim.lsp.config, then enable.
+      for server_name, server in pairs(servers) do
+        server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+        vim.lsp.config(server_name, server)
+      end
+      vim.lsp.enable 'clangd'
     end,
   },
 
@@ -840,7 +841,7 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
+        local disable_filetypes = {}
         if disable_filetypes[vim.bo[bufnr].filetype] then
           return nil
         else
@@ -852,6 +853,8 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        c = { 'clang-format' },
+        cpp = { 'clang-format' },
         javascript = { 'prettierd', 'prettier', stop_after_first = true },
         javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
         typescript = { 'prettierd', 'prettier', stop_after_first = true },
@@ -1080,6 +1083,9 @@ require('lazy').setup({
         'go',
         'bash',
         'c',
+        'cpp',
+        'make',
+        'cmake',
         'diff',
         'html',
         'lua',
